@@ -1,29 +1,112 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from '../pages/Dashboard.vue'
-import Workouts from '../pages/Workouts.vue'
-import Nutrition from '../pages/Nutrition.vue'
+
+// Navigation guard
+const authGuard = (to, from, next) => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated')
+  
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next('/login')
+  } else {
+    next()
+  }
+}
 
 const routes = [
   {
+  path: '/register',
+  name: 'Register',
+  component: () => import('@/pages/Auth/Register.vue')
+},
+  {
     path: '/',
     name: 'Dashboard',
-    component: Dashboard
+    component: () => import('@/pages/Dashboard.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/workouts',
-    name: 'Workouts', 
-    component: Workouts
+    component: () => import('@/pages/Workouts/index.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Workouts',
+        component: () => import('@/pages/Workouts/index.vue')
+      },
+      {
+        path: 'create',
+        name: 'CreateWorkout',
+        component: () => import('@/pages/Workouts/create.vue')
+      },
+      {
+        path: ':id',
+        name: 'WorkoutDetail',
+        component: () => import('@/pages/Workouts/WorkoutDetail.vue'),
+        props: true
+      }
+    ]
   },
   {
     path: '/nutrition',
-    name: 'Nutrition',
-    component: Nutrition
+    component: () => import('@/pages/Nutrition/index.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Nutrition',
+        component: () => import('@/pages/Nutrition/index.vue')
+      },
+      {
+        path: 'meal-plan',
+        name: 'MealPlan',
+        component: () => import('@/pages/Nutrition/meal-plan.vue')
+      }
+    ]
+  },
+  {
+    path: '/profile',
+    component: () => import('@/pages/Profile/index.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'Profile',
+        component: () => import('@/pages/Profile/index.vue')
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('@/pages/Profile/settings.vue')
+      }
+    ]
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/pages/Auth/Login.vue')
+  },
+  {
+    path: '/community',
+    name: 'Community',
+    component: () => import('@/pages/Community.vue')
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/pages/NotFound.vue')
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
+    }
+  }
 })
+
+router.beforeEach(authGuard)
 
 export default router
